@@ -27,8 +27,8 @@ struct I2cRdwrData {
     nmsgs: u32,
 }
 
-/// Write the register address, then read `len` bytes (repeated start),
-/// equivalent to smbus `read_i2c_block_data`.
+/// Read `len` bytes starting at register `reg`: one I²C transaction that writes
+/// the register address, then reads back after a repeated start.
 fn read_block(f: &File, addr: u16, reg: u8, len: usize) -> io::Result<Vec<u8>> {
     let mut reg_buf = [reg];
     let mut out = vec![0u8; len];

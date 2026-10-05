@@ -2,18 +2,28 @@
 
 A status dashboard for a Raspberry Pi home server in a single binary: Rust, ~1.4 MB static, with the UI and fonts embedded.
 
-Replaces the old `status.sh` + `sections/*.sh` + `server.py` setup.
+## What it shows
 
-## What changed
+* **Vitals:** CPU, temperature, memory, network and load, each with a 10-minute history, plus uptime.
+* **Services:** state, uptime, memory, restarts and version for every systemd unit you list.
+* **Bitcoin node:** block height, sync progress, peers, mempool and fees over JSON-RPC.
+* **Power:** battery, input and cell voltages from a Waveshare UPS HAT (E), plus the Pi's
+  under-voltage and throttling flags.
+* **Storage:** usage for the mounts you list.
+* **Logs:** journal views, for example kernel warnings, with filtering.
+* **Custom panels:** the output of any command as a card.
+* **Alerts:** a single summary of everything that needs attention, with configurable thresholds.
 
-| Old | New |
-|---|---|
-| Every page load forked ~40 processes (one `status.sh` per viewer, every 15 s) | Background collectors sample once on a timer; requests just read the latest snapshot |
-| `sudo -u satoshi bitcoin-cli -getinfo` | Direct JSON-RPC (one batched call) with a read-only RPC user |
-| Python + smbus for the UPS | Native I²C ioctl (also fixes the off-by-one in negative battery current) |
-| Text parsed back out of `df`, `free`, `vcgencmd` with regexes | Read from `/proc`, `/sys` and `statvfs` directly |
-| Manual `refresh-versions.sh` | Version commands re-run automatically every 6 h, or on demand from the UI |
-| Edit a script to add a service | Drop a `.toml` file in `services.d/`; picked up within 5 s, no restart |
+## How it works
+
+* **One static binary** with the web UI and fonts embedded. No runtime, interpreter or web
+  server needed on the Pi.
+* **Background collectors** sample on a timer. Page loads only read the latest snapshot, so
+  any number of viewers costs nothing extra.
+* **Direct sources:** reads `/proc`, `/sys` and `statvfs` itself, talks to I²C and bitcoind
+  directly, and asks systemd for all services in a single call.
+* **Plain TOML config:** one file per service or panel. Changes are picked up within seconds,
+  with no rebuild and no restart.
 
 ## Configuration
 
@@ -139,7 +149,6 @@ sudo install -m 0755 /tmp/pi-status /usr/local/bin/pi-status
 sudo mkdir -p /etc/pi-status && sudo cp -r /tmp/pi-status-config/. /etc/pi-status/
 sudo chown -R root:pi-status /etc/pi-status && sudo chmod 0640 /etc/pi-status/pi-status.toml
 sudo -u pi-status pi-status --check -c /etc/pi-status
-sudo systemctl stop pi-status    # only if an older pi-status service is running
 sudo cp /tmp/pi-status.service /etc/systemd/system/pi-status.service
 sudo systemctl daemon-reload && sudo systemctl enable --now pi-status
 ```
