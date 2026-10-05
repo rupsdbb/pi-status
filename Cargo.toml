@@ -1,0 +1,19 @@
+[package]
+name = "pi-status"
+version = "0.1.0"
+edition = "2021"
+description = "Single-binary status dashboard for a Raspberry Pi home server"
+license = "GPL-3.0-or-later"
+publish = false
+
+[dependencies]
+libc = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tiny_http = "0.12"
+toml = "0.8"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

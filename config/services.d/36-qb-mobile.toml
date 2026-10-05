@@ -1,0 +1,6 @@
+name  = "qBittorrent Mobile"
+unit  = "qb-mobile"
+group = "Apps"
+
+[version]
+fixed = "0.1"

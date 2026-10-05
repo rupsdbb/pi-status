@@ -1,0 +1,6 @@
+name  = "Fail2Ban"
+unit  = "fail2ban"
+group = "Network"
+
+[version]
+cmd = "dpkg-query -W -f='${Version}' fail2ban"

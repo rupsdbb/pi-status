@@ -1,0 +1,6 @@
+name  = "DNSMasq"
+unit  = "dnsmasq"
+group = "Network"
+
+[version]
+cmd = "dnsmasq --version"

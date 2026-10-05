@@ -1,0 +1,8 @@
+name  = "Mempool Explorer"
+unit  = "mempool-backend"
+group = "Bitcoin"
+# link = "https://pi.home/mempool/"
+
+[version]
+# '''literal''' strings need no escaping
+cmd = '''grep -oP '"version"\s*:\s*"\K[^"]+' /opt/mempool/backend/dist/api/version.json'''

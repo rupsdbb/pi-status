@@ -1,0 +1,6 @@
+name  = "Vaultwarden"
+unit  = "vaultwarden"
+group = "Apps"
+
+[version]
+cmd = "/opt/vaultwarden/vaultwarden --version"

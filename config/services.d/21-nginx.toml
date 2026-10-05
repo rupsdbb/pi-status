@@ -1,0 +1,6 @@
+name  = "Nginx"
+unit  = "nginx"
+group = "Network"
+
+[version]
+cmd = "nginx -v"

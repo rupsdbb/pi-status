@@ -1,0 +1,8 @@
+Embedded fonts. All are licensed under the SIL Open Font License 1.1; the full
+licence text and copyright notice for each is in the matching OFL-*.txt file.
+
+  doto.woff2              Doto (variable: wght 100-900, ROND 0-100)   OFL-doto.txt
+  space-grotesk.woff2     Space Grotesk (variable: wght 300-700)      OFL-spacegrotesk.txt
+  space-mono-400/700      Space Mono                                  OFL-spacemono.txt
+
+Latin subsets as served by Google Fonts.

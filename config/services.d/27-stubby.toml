@@ -1,0 +1,6 @@
+name  = "Stubby"
+unit  = "stubby"
+group = "Network"
+
+[version]
+cmd = "stubby -V"

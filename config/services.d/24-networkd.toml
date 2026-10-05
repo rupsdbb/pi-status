@@ -1,0 +1,6 @@
+name  = "Systemd-Networkd"
+unit  = "systemd-networkd"
+group = "Network"
+
+[version]
+cmd = "dpkg-query -W -f='${Version}' systemd"

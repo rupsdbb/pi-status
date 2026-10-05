@@ -1,0 +1,6 @@
+name  = "MariaDB"
+unit  = "mariadb"
+group = "Bitcoin"
+
+[version]
+cmd = "dpkg-query -W -f='${Version}' mariadb-server"

@@ -1,0 +1,7 @@
+name  = "UFW Firewall"
+unit  = "ufw"
+group = "Network"
+
+[version]
+# `ufw --version` refuses to run as non-root; ask dpkg instead
+cmd = "dpkg-query -W -f='${Version}' ufw"

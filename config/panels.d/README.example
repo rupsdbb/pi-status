@@ -1,0 +1,10 @@
+# Custom panels: any command's output as a card. Copy to e.g. 10-wireguard.toml.
+# Files must end in .toml to be loaded; rename to .toml.disabled to turn one off.
+
+name     = "WireGuard"
+cmd      = "wg show wg0 latest-handshakes"   # run via sh -c, as the pi-status user
+format   = "text"     # "text" (monospace) or "kv" (lines of "key : value" / "key=value")
+interval = 60         # seconds between runs
+timeout  = 10         # seconds before the command is killed
+wide     = false      # larger 2×2 card instead of 2×1
+# enabled = false

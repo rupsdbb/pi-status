@@ -1,0 +1,6 @@
+name  = "Navidrome"
+unit  = "navidrome"
+group = "Apps"
+
+[version]
+cmd = "/opt/navidrome/navidrome --version"

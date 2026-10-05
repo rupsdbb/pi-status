@@ -1,0 +1,6 @@
+name  = "YouTube Downloader"
+unit  = "yt-dlp"
+group = "Apps"
+
+[version]
+cmd = "/opt/yt-dlp/venv/bin/yt-dlp --version"

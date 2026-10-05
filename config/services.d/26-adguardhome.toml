@@ -1,0 +1,6 @@
+name  = "AdGuardHome"
+unit  = "adguardhome"
+group = "Network"
+
+[version]
+cmd = "adguardhome --version"

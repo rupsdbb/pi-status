@@ -1,0 +1,88 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<title>Pi Status</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preload" href="fonts/doto.woff2?v=2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/space-mono-700.woff2?v=2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="app.css">
+<script>
+  // Apply the viewer's saved theme and palette before first paint.
+  try {
+    const r = document.documentElement, t = localStorage.getItem("pi-status.theme");
+    if (t === "dark" || t === "light") r.dataset.theme = t;
+    const v = JSON.parse(localStorage.getItem("pi-status.palette.vars") || "null");
+    if (v) for (const k in v) r.style.setProperty(k, v[k]);
+  } catch {}
+</script>
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <div class="ident">
+      <h1 class="title" id="title">Pi Status</h1>
+      <div class="sub" id="sub">Connecting</div>
+    </div>
+    <div class="top-right">
+      <div class="clock" id="clock" aria-hidden="true">--:--</div>
+      <button type="button" class="pill status" id="status" data-s="off"><span class="led"></span><span id="status-text">Connecting</span></button>
+      <div class="picker">
+        <button type="button" class="pill" id="palette" aria-haspopup="menu" aria-expanded="false" aria-label="Colour palette">
+          <span class="sw" id="palette-sw"></span><span id="palette-name">Mono</span>
+        </button>
+        <div class="menu" id="palette-menu" role="menu" hidden></div>
+      </div>
+      <button type="button" class="pill" id="theme" aria-label="Light or dark mode">Auto</button>
+    </div>
+  </header>
+
+  <section class="alerts" id="alerts" hidden aria-label="Alerts"></section>
+
+  <div class="bento-wrap">
+    <section class="bento" id="bento" aria-label="Overview"></section>
+  </div>
+
+  <section class="section" id="services-section" aria-labelledby="svc-title">
+    <div class="section-head">
+      <h2 id="svc-title">Services</h2>
+      <span class="label" id="svc-meta"></span>
+      <div class="seg" role="group" aria-label="Filter services">
+        <button type="button" data-filter="all" aria-pressed="true">All</button>
+        <button type="button" data-filter="issues" aria-pressed="false">Issues</button>
+      </div>
+    </div>
+    <div class="svc-grid" id="services"></div>
+  </section>
+
+  <footer class="foot">
+    <span id="foot-info"></span>
+    <button type="button" class="pill" id="refresh-versions">Refresh versions</button>
+  </footer>
+</div>
+
+<dialog id="sheet" aria-labelledby="sheet-title">
+  <div class="sheet">
+    <header class="sheet-head">
+      <div class="sheet-id">
+        <h2 id="sheet-title"></h2>
+        <div class="label" id="sheet-meta"></div>
+      </div>
+      <button type="button" class="pill" id="sheet-close">Close</button>
+    </header>
+    <div class="sheet-tools" id="sheet-tools" hidden>
+      <input type="search" id="log-filter" placeholder="Filter" autocomplete="off" spellcheck="false">
+      <button type="button" class="pill" id="log-wrap" aria-pressed="false">Wrap</button>
+      <button type="button" class="pill" id="log-reload">Reload</button>
+    </div>
+    <div class="sheet-body" id="sheet-body"></div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" hidden></div>
+<script src="app.js"></script>
+</body>
+</html>

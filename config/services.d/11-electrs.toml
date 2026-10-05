@@ -1,0 +1,6 @@
+name  = "Electrs"
+unit  = "electrs"
+group = "Bitcoin"
+
+[version]
+cmd = "electrs --version"

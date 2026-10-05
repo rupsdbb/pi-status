@@ -1,0 +1,6 @@
+name  = "Tor"
+unit  = "tor@default"
+group = "Network"
+
+[version]
+cmd = "tor --version"

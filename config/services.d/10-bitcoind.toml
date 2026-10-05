@@ -1,0 +1,6 @@
+name  = "Bitcoin Knots"
+unit  = "bitcoind"
+group = "Bitcoin"
+
+[version]
+cmd = "bitcoind --version"

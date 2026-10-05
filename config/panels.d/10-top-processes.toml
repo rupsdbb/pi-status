@@ -1,0 +1,4 @@
+name     = "Top processes (memory)"
+cmd      = "ps -eo rss=,comm= --sort=-rss | head -8 | awk '{ printf \"%s : %.0f MiB\\n\", $2, $1/1024 }'"
+format   = "kv"
+interval = 30

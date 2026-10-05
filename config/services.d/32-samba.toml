@@ -1,0 +1,6 @@
+name  = "Samba"
+unit  = "smbd"
+group = "Apps"
+
+[version]
+cmd = "smbd --version"

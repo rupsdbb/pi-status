@@ -1,0 +1,24 @@
+[Unit]
+Description=Pi status dashboard
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/pi-status --config /etc/pi-status
+User=pi-status
+Group=pi-status
+# video: vcgencmd (/dev/vcio)   i2c: UPS HAT   systemd-journal: log panels
+SupplementaryGroups=video i2c systemd-journal
+Restart=on-failure
+RestartSec=3
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+
+[Install]
+WantedBy=multi-user.target

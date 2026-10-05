@@ -1,0 +1,6 @@
+name  = "qBittorrent Server"
+unit  = "qbittorrent"
+group = "Apps"
+
+[version]
+cmd = "qbittorrent-nox --version"

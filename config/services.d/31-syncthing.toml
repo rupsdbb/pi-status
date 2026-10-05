@@ -1,0 +1,6 @@
+name  = "Syncthing"
+unit  = "syncthing@rupam"
+group = "Apps"
+
+[version]
+cmd = "syncthing --version"

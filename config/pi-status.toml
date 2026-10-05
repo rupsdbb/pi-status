@@ -1,0 +1,82 @@
+# pi-status main configuration.
+# Every file in this directory is re-read automatically when it changes;
+# only `listen` needs a restart. Validate with:  pi-status --check
+
+listen   = "127.0.0.1:8080"
+title    = "Pi Status"
+interval = 5          # seconds between samples (system, services, UPS, storage)
+history  = 120        # samples kept for sparklines (120 × 5 s = 10 min)
+version_refresh = 21600   # re-run version commands every 6 h (or click "Refresh versions")
+
+# Uncomment to serve a customised UI from disk instead of the built-in one.
+# Copy index.html / app.css / app.js / favicon.svg there and edit freely.
+# ui_dir = "/etc/pi-status/ui"
+
+[ui]
+# Defaults for viewers who haven't picked their own (the picker in the header
+# remembers each browser's choice).
+palette = "mono"     # mono, crimson, navy, forest, amber, or a custom id below
+theme   = "auto"     # auto (follow the device), dark, light
+
+# Define your own colour pair. `dark` is the background in dark mode and the
+# text in light mode; `light` is the opposite. All other shades are derived.
+# [[ui.palettes]]
+# id           = "violet"
+# name         = "Violet"
+# dark         = "#1a0f2e"
+# light        = "#efe6ff"
+# accent_dark  = "#ffd43b"   # alerts in dark mode
+# accent_light = "#c2410c"   # alerts in light mode
+
+[thresholds]
+temp_warn    = 70
+temp_crit    = 80
+cpu_warn     = 90
+mem_warn     = 90
+disk_warn    = 85
+disk_crit    = 95
+battery_warn = 30
+battery_crit = 15
+
+[system]
+thermal_zone  = "/sys/class/thermal/thermal_zone0/temp"
+throttled_cmd = "vcgencmd get_throttled"   # "" to disable
+net_iface     = ""    # e.g. "eth0" / "end0"; "" = all physical interfaces
+
+[[storage]]
+path  = "/"
+label = "System"
+
+[[storage]]
+path  = "/data"
+label = "Data"
+
+[ups]
+enabled = true
+bus     = 1
+address = 0x2d       # Waveshare UPS HAT (E)
+
+[bitcoin]
+enabled  = true
+rpc_url  = "http://127.0.0.1:8332"
+interval = 30
+# Recommended: a dedicated read-only RPC user (see README).
+user     = "pistatus"
+password = "CHANGE-ME"
+# Alternative: cookie auth (needs read access to the cookie file).
+# cookie_file = "/data/bitcoin/.cookie"
+
+[[logs]]
+id      = "kernel"
+name    = "Kernel warnings"
+args    = ["-k", "-b", "-p", "warning..emerg"]
+exclude = ["UFW BLOCK"]
+interval = 60
+
+[[logs]]
+id      = "undervoltage"
+name    = "Under-voltage events"
+args    = ["-k", "-b"]
+include = ["voltage"]
+interval = 60
+alert   = true
