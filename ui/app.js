@@ -20,7 +20,9 @@ function bytesParts(n) {
   const u = ["B", "KB", "MB", "GB", "TB", "PB"];
   let i = 0;
   while (n >= 1000 && i < u.length - 1) { n /= 1000; i++; }
-  return [i === 0 ? String(Math.round(n)) : n.toFixed(n < 10 ? 1 : 0), u[i]];
+  let text = i === 0 ? String(Math.round(n)) : n.toFixed(n < 10 ? 1 : 0);
+  if (Number(text) >= 1000 && i < u.length - 1) { n /= 1000; i++; text = n.toFixed(1); } // 999.95 KB → 1.0 MB
+  return [text, u[i]];
 }
 const bytes = (n) => bytesParts(n).join(" ").trim();
 const rate = (n) => (fin(n) ? `${bytes(n)}/s` : "--");
@@ -145,6 +147,16 @@ const S = {
 
 /* ============================== modules ============================== */
 
+/** Dot-matrix headline value. Doto is monospaced (0.61em per character), so the
+    CSS can shrink long values (e.g. a 400-day uptime) to fit the card exactly. */
+function bigNum(value, unit = "") {
+  const text = String(value);
+  const unitW = unit ? unit.length * 9 + 6 : 0;   // Space Mono unit + gap, in px
+  return `<div class="big" style="--chars:${text.length};--unit-w:${unitW}px">${esc(text)}` +
+    (unit ? `<span class="unit">${esc(unit)}</span>` : "") + `</div>`;
+}
+
+
 const head = (l, r = "") =>
   `<header class="mod-head"><span class="label">${l}</span>${r ? `<span class="label">${r}</span>` : ""}</header>`;
 
@@ -162,7 +174,7 @@ function vitals(d) {
   mods.push({
     id: "cpu", cls: "m-sm", s: level(s.cpu_pct, t.cpu_warn),
     html: head("CPU", `${win}`) +
-      `<div class="big">${fin(s.cpu_pct) ? Math.round(s.cpu_pct) : "--"}<span class="unit">%</span></div>` +
+      bigNum(fin(s.cpu_pct) ? Math.round(s.cpu_pct) : "--", "%") +
       `<div class="note">avg ${cpuAvg.length ? pct(cpuAvg.reduce((a, b) => a + b, 0) / cpuAvg.length) : "--"}</div>` +
       `<div class="chart" data-s="${level(s.cpu_pct, t.cpu_warn)}">${dotChart(h.cpu, { min: 0, max: 100 })}</div>`,
   });
@@ -171,7 +183,7 @@ function vitals(d) {
   mods.push({
     id: "temp", cls: "m-sm", s: level(s.temp_c, t.temp_warn, t.temp_crit),
     html: head("Temp", win) +
-      `<div class="big">${fin(s.temp_c) ? s.temp_c.toFixed(1) : "--"}<span class="unit">°C</span></div>` +
+      bigNum(fin(s.temp_c) ? s.temp_c.toFixed(1) : "--", "°C") +
       `<div class="note">peak ${temps.length ? Math.max(...temps).toFixed(1) + "°" : "--"}</div>` +
       `<div class="chart" data-s="${level(s.temp_c, t.temp_warn, t.temp_crit)}">${dotChart(h.temp)}</div>`,
   });
@@ -180,7 +192,7 @@ function vitals(d) {
   mods.push({
     id: "mem", cls: "m-sm", s: level(memPct, t.mem_warn),
     html: head("Memory", bytes(s.mem.total)) +
-      `<div class="big">${fin(memPct) ? Math.round(memPct) : "--"}<span class="unit">%</span></div>` +
+      bigNum(fin(memPct) ? Math.round(memPct) : "--", "%") +
       `<div class="note">${bytes(s.mem.used)} used</div>` +
       `<div class="chart" data-s="${level(memPct, t.mem_warn)}">${dotChart(h.mem, { min: 0, max: 100 })}</div>`,
   });
@@ -189,7 +201,7 @@ function vitals(d) {
   mods.push({
     id: "net", cls: "m-sm", s: "",
     html: head("Net in", esc(s.net?.iface ?? "")) +
-      `<div class="big">${rxN}<span class="unit">${rxU ? rxU + "/s" : ""}</span></div>` +
+      bigNum(rxN, rxU ? rxU + "/s" : "") +
       `<div class="note">out ${rate(s.net?.tx_bps)}</div>` +
       `<div class="chart">${dotChart(h.rx, { min: 0 })}</div>`,
   });
@@ -197,7 +209,7 @@ function vitals(d) {
   mods.push({
     id: "load", cls: "m-sm", s: s.load[0] > s.cpu_count ? "warn" : "",
     html: head("Load", `${s.cpu_count} cores`) +
-      `<div class="big">${s.load[0].toFixed(2)}</div>` +
+      bigNum(s.load[0].toFixed(2)) +
       `<div class="note">${s.load[1].toFixed(2)} · ${s.load[2].toFixed(2)}</div>` +
       `<div class="chart" data-s="${s.load[0] > s.cpu_count ? "warn" : ""}">${dotChart(h.load, { min: 0 })}</div>`,
   });
@@ -205,7 +217,7 @@ function vitals(d) {
   mods.push({
     id: "uptime", cls: "m-sm", s: "",
     html: head("Uptime") +
-      `<div class="big">${dur(s.uptime_secs).toUpperCase()}</div>` +
+      bigNum(dur(s.uptime_secs).toUpperCase()) +
       `<div class="note">since ${dateShort(s.boot_time)}</div>` +
       `<dl class="spec mini"><dt>Dashboard</dt><dd>up ${dur(serverNow() - d.started)}</dd>` +
       `<dt>Interval</dt><dd>${d.interval}s</dd></dl>`,
@@ -218,7 +230,7 @@ function bitcoinMod(d) {
   const b = d.bitcoin;
   if (!b) return null;
   if (b.error) {
-    return { id: "bitcoin", cls: "m-sm", s: "warn", html: head("Bitcoin") + `<div class="scroll flush"><div class="err">${esc(b.error)}</div></div>` };
+    return { id: "bitcoin", cls: "m-sm", s: "warn", html: head("Bitcoin") + `<div class="clip flush"><div class="err">${esc(b.error)}</div></div>` };
   }
   const chain = { main: "mainnet", test: "testnet3", testnet4: "testnet4", signet: "signet", regtest: "regtest" }[b.chain] ?? b.chain;
   const behind = Math.max(0, b.headers - b.blocks);
@@ -231,7 +243,7 @@ function bitcoinMod(d) {
     id: "bitcoin", cls: "m-wide", s: b.peers === 0 ? "warn" : "",
     html: head("Bitcoin", esc(chain)) +
       `<div class="split btc"><div>` +
-      `<div class="big">${num(b.blocks)}</div>` +
+      bigNum(num(b.blocks)) +
       `<div class="note">${synced ? `synced · block ${ago(b.best_block_time)}` : `syncing · ${num(behind)} behind`}</div>` +
       `<div class="meter push">${dotMeter(synced ? mpFrac : b.progress, 30)}</div>` +
       `<div class="meter-cap"><span class="label">${synced ? "Mempool fill" : "Sync"}</span>` +
@@ -273,7 +285,7 @@ function powerMod(d) {
             .map(([k, now, seen]) => `<dt>${k}</dt><dd>${now ? "NOW" : seen ? "SINCE BOOT" : "NONE"}</dd>`).join("") +
           `</dl>`
         : "");
-    return { id: "power", cls: "m-sm", s: u?.error ? "warn" : thLevel, html: head("Power") + `<div class="scroll flush">${body}</div>` };
+    return { id: "power", cls: "m-sm", s: u?.error ? "warn" : thLevel, html: head("Power") + `<div class="clip flush">${body}</div>` };
   }
 
   const battLevel = u.percent <= t.battery_crit ? "crit" : u.percent <= t.battery_warn ? "warn" : "";
@@ -319,7 +331,7 @@ function storageMod(d) {
       `<div class="meter tight" data-s="${l === "ok" ? "" : l}">${dotMeter(p / 100, 40)}</div>` +
       `<div class="meter-cap"><span class="label">${bytes(m.used)} / ${bytes(m.total)}</span><span class="label">${bytes(m.avail)} free</span></div></div>`;
   }).join("");
-  return { id: "storage", cls: "m-wide", s: worst, html: head("Storage", `${d.storage.length} mounts`) + `<div class="disks">${rows}</div>` };
+  return { id: "storage", cls: "m-wide", s: worst, html: head("Storage", `${d.storage.length} mounts`) + `<div class="disks clip">${rows}</div>` };
 }
 
 function logsMod(d) {
@@ -333,7 +345,7 @@ function logsMod(d) {
       `<span class="row-name">${esc(l.name)}</span><span class="row-count${hot ? " hot" : ""}">${l.error ? "!" : l.count == null ? "--" : num(l.count)}</span>` +
       `<span class="row-last">${esc(last)}</span></button>`;
   }).join("");
-  return { id: "logs", cls: "m-wide", s, html: head("Logs", "this boot") + `<div class="scroll"><div class="rows">${rows}</div></div>` };
+  return { id: "logs", cls: "m-wide", s, html: head("Logs", "this boot") + `<div class="clip"><div class="rows">${rows}</div></div>` };
 }
 
 function panelMods(d) {
@@ -348,8 +360,8 @@ function panelMods(d) {
       if (!data.error && !data.items.length && !data.lines.length) body += `<div class="note">no output</div>`;
     }
     return {
-      id: `panel:${p.id}`, cls: p.wide ? "m-big" : "m-wide", s: data?.error ? "warn" : "",
-      html: head(esc(p.name)) + `<div class="scroll">${body}</div>` +
+      id: `panel:${p.id}`, cls: p.wide ? "m-big" : "m-wide", s: data?.error ? "warn" : "", open: `panel:${p.id}`, label: p.name,
+      html: head(esc(p.name), "open") + `<div class="clip">${body}</div>` +
         (data ? `<div class="foot-note">updated ${ago(data.updated)}</div>` : ""),
     };
   });
@@ -367,16 +379,42 @@ function reconcile(root, mods) {
     }
     el.className = `mod ${m.cls}`;
     el.dataset.s = m.s || "";
+    if (m.open) {
+      el.dataset.open = m.open;
+      el.tabIndex = 0;
+      el.setAttribute("role", "button");
+      el.setAttribute("aria-label", `Open ${m.label ?? m.id}`);
+    } else {
+      delete el.dataset.open;
+      el.removeAttribute("tabindex");
+      el.removeAttribute("role");
+      el.removeAttribute("aria-label");
+    }
     if (el._html !== m.html) {
-      const tops = [...el.querySelectorAll(".scroll")].map((x) => x.scrollTop);
       el.innerHTML = m.html;
       el._html = m.html;
-      el.querySelectorAll(".scroll").forEach((x, j) => { if (tops[j]) x.scrollTop = tops[j]; });
     }
     if (root.children[i] !== el) root.insertBefore(el, root.children[i] || null);
   });
   [...root.children].forEach((c) => { if (!keep.has(c.dataset.mod)) c.remove(); });
+  markClipped(root);
 }
+
+/* Cards never scroll internally (that would trap wheel and swipe gestures and
+   stop the page from scrolling). Content that doesn't fit fades out instead,
+   and the full content opens in the sheet. */
+function markClipped(root) {
+  root.querySelectorAll(".clip").forEach((el) => {
+    el.classList.toggle("more", el.scrollHeight > el.clientHeight + 1);
+  });
+}
+window.addEventListener("resize", () => markClipped($("#bento")));
+document.fonts?.ready.then(() => markClipped($("#bento")));   // heights change once fonts load
+
+document.addEventListener("keydown", (e) => {
+  const card = e.target.closest?.("#bento [data-open]");
+  if (card && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); card.click(); }
+});
 
 function renderBento(d) {
   const mods = [...vitals(d), bitcoinMod(d), powerMod(d), storageMod(d), logsMod(d), ...panelMods(d)].filter(Boolean);
@@ -456,14 +494,26 @@ function renderStatus() {
     if (crit) { s = "crit"; text = `${crit + warn} issue${crit + warn > 1 ? "s" : ""}`; }
     else if (warn) { s = "warn"; text = `${warn} warning${warn > 1 ? "s" : ""}`; }
     else { s = "ok"; text = "All systems OK"; }
+    if (s !== "crit" && d.now - d.updated > d.interval * 2 + 2) { s = "warn"; text = "Data stalled"; }
     document.title = (crit + warn ? `(${crit + warn}) ` : "") + d.title;
   }
   $("#status").dataset.s = s;
   $("#status-text").textContent = text;
 
   if (d) {
+    // Server sampling and browser polling both run every `interval` seconds but
+    // aren't in step, so normal data is up to ~2 intervals old: that is "live".
+    //   stalled: the snapshot was already old when fetched (server collector stuck)
+    //   paused:  this page hasn't polled lately (background tab, sleeping laptop)
+    const slack = d.interval * 2 + 2;
     const age = serverNow() - d.updated;
-    $("#sub").textContent = `${d.hostname} · ${S.error ? `offline ${dur(age)}` : age < 3 ? "live" : `updated ${dur(age)} ago`}`;
+    const stalledAtFetch = d.now - d.updated > slack;
+    const sinceFetch = (Date.now() - S.lastOk) / 1000;
+    const state = S.error ? `offline · data ${dur(age)} old`
+      : stalledAtFetch ? `stalled · updated ${dur(age)} ago`
+      : sinceFetch > slack ? `paused · updated ${dur(age)} ago`
+      : "live";
+    $("#sub").textContent = `${d.hostname} · ${state}`;
   }
 }
 
@@ -493,6 +543,8 @@ const sheet = $("#sheet");
 function openSheet(kind, id) {
   S.sheet = { kind, id };
   sheet.classList.toggle("compact", kind === "svc");
+  $("#sheet-body").scrollTop = 0;
+  $("#sheet-body")._html = null;
   $("#sheet-tools").hidden = kind !== "log";
   if (kind === "log") {
     S.log = { lines: [], updated: null, error: null };
@@ -504,17 +556,37 @@ function openSheet(kind, id) {
   if (!sheet.open) sheet.showModal();
 }
 
-function renderSheet() {
-  const d = S.data;
+/** Replace the sheet body only when it changed, so live refreshes don't reset
+    the reader's text selection. */
+function setSheetBody(html) {
+  const body = $("#sheet-body");
+  if (body._html !== html) { body.innerHTML = html; body._html = html; }
+}
+
+function renderSheet(d = S.data) {
   if (!S.sheet || !d) return;
+  if (S.sheet.kind === "panel") {
+    const p = d.panels.find((x) => x.id === S.sheet.id);
+    if (!p) { sheet.close(); return; }
+    const data = p.data;
+    $("#sheet-title").textContent = p.name;
+    $("#sheet-meta").textContent = data ? `updated ${ago(data.updated)}` : "waiting for first run";
+    let body = "";
+    if (data?.error) body += `<div class="err">${esc(data.error)}</div>`;
+    if (data?.items.length) body += `<dl class="spec">${data.items.map((i) => `<dt>${esc(i.key)}</dt><dd class="wrap">${esc(i.value)}</dd>`).join("")}</dl>`;
+    if (data?.lines.length) body += `<pre class="out sheet-out">${esc(data.lines.join("\n"))}</pre>`;
+    if (data && !data.error && !data.items.length && !data.lines.length) body += `<div class="empty">No output</div>`;
+    setSheetBody(body);
+    return;
+  }
   if (S.sheet.kind === "svc") {
     const s = d.services.find((x) => x.id === S.sheet.id);
-    if (!s) return;
+    if (!s) { sheet.close(); return; }
     const l = svcLevel(s);
     $("#sheet-title").textContent = s.name;
     $("#sheet-meta").textContent = s.unit;
     const row = (k, v, cls = "") => (v == null || v === "" ? "" : `<dt>${k}</dt><dd class="${cls}">${v}</dd>`);
-    $("#sheet-body").innerHTML = `<dl class="spec">` +
+    setSheetBody(`<dl class="spec">` +
       row("Status", `<span class="status-cell"><span class="led" data-s="${l}"></span>${esc(svcWord(s))}</span>`) +
       row("State", esc(`${s.active} / ${s.sub}`)) +
       row("Running for", fin(s.active_secs) ? dur(s.active_secs) : null) +
@@ -526,7 +598,7 @@ function renderSheet() {
       row("Group", esc(s.group)) +
       row("Description", esc(s.description), "wrap") +
       (s.link ? row("Link", `<a href="${esc(s.link)}" target="_blank" rel="noopener">${esc(s.link)}</a>`, "wrap") : "") +
-      `</dl>`;
+      `</dl>`);
   } else {
     const meta = d.logs.find((x) => x.id === S.sheet.id);
     $("#sheet-title").textContent = meta?.name ?? S.sheet.id;
@@ -602,13 +674,13 @@ function render(d) {
   renderAlerts(d);
   renderBento(d);
   renderServices(d);
-  if (S.sheet?.kind === "svc") renderSheet();
+  if (S.sheet && S.sheet.kind !== "log") renderSheet(d);
 }
 
 async function poll() {
   clearTimeout(S.timer);
   try {
-    const r = await fetch("api/status", { cache: "no-store" });
+    const r = await fetch("api/status", { cache: "no-store", signal: AbortSignal.timeout(10000) });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const d = await r.json();
     S.offset = d.now - Date.now() / 1000;
@@ -669,6 +741,9 @@ document.addEventListener("click", (e) => {
   const svc = t.closest("[data-svc]");
   if (svc) { openSheet("svc", svc.dataset.svc); return; }
 
+  const card = t.closest("[data-open]");
+  if (card) { const [kind, ...id] = card.dataset.open.split(":"); openSheet(kind, id.join(":")); return; }
+
   const log = t.closest("[data-log]");
   if (log) { openSheet("log", log.dataset.log); return; }
 });
@@ -684,19 +759,20 @@ function setFilter(f) {
 /* A palette is a colour pair + alert accent; app.css derives every other shade. */
 const BUILTIN_PALETTES = [
   { id: "mono",    name: "Mono",    dark: "#000000", light: "#ffffff", accent_dark: "#ff2f36", accent_light: "#d71921" },
-  { id: "crimson", name: "Crimson", dark: "#3a0510", light: "#f6e7d5", accent_dark: "#ffc93c", accent_light: "#b45309" },
-  { id: "navy",    name: "Navy",    dark: "#0a1431", light: "#e6edff", accent_dark: "#ff6a4d", accent_light: "#d9381e" },
-  { id: "forest",  name: "Forest",  dark: "#0b1c13", light: "#ece5d0", accent_dark: "#ff7b47", accent_light: "#c2410c" },
+  { id: "crimson", name: "Crimson", dark: "#3a0510", light: "#f6e7d5", accent_dark: "#ffc93c", accent_light: "#9a3f06" },
+  { id: "navy",    name: "Navy",    dark: "#0a1431", light: "#e6edff", accent_dark: "#ff6a4d", accent_light: "#b52a12" },
+  { id: "forest",  name: "Forest",  dark: "#0b1c13", light: "#ece5d0", accent_dark: "#ff7b47", accent_light: "#a3360a" },
   { id: "amber",   name: "Amber",   dark: "#130c00", light: "#ffc457", accent_dark: "#ff3b30", accent_light: "#a1000f" },
 ];
 
-/** Black or white, whichever reads better on `hex`. */
+/** Black or white, whichever has the higher WCAG contrast on `hex`. */
 function onColor(hex) {
   let h = hex.replace("#", "");
   if (h.length === 3) h = [...h].map((c) => c + c).join("");
   const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
     .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.4 ? "#000000" : "#ffffff";
+  const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return (L + 0.05) / 0.05 >= 1.05 / (L + 0.05) ? "#000000" : "#ffffff";
 }
 
 function palettes() {

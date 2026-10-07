@@ -60,9 +60,9 @@
   --surface-2: color-mix(in oklab, var(--paper) 89%, var(--ink));
   --line: color-mix(in oklab, var(--paper) 85%, var(--ink));
   --fg: color-mix(in oklab, var(--ink) 96%, var(--paper));
-  --fg-2: color-mix(in oklab, var(--ink) 60%, var(--paper));
-  --fg-3: color-mix(in oklab, var(--ink) 42%, var(--paper));
-  --dot-off: color-mix(in oklab, var(--paper) 85%, var(--ink));
+  --fg-2: color-mix(in oklab, var(--ink) 67%, var(--paper));
+  --fg-3: color-mix(in oklab, var(--ink) 54%, var(--paper));
+  --dot-off: color-mix(in oklab, var(--paper) 81%, var(--ink));
   --grid-dot: color-mix(in srgb, var(--ink) 8%, transparent);
   --overlay: color-mix(in srgb, var(--paper) 72%, transparent);
   color-scheme: dark;
@@ -75,9 +75,9 @@
     --surface-2: color-mix(in oklab, var(--paper) 89%, var(--ink));
     --line: color-mix(in oklab, var(--paper) 85%, var(--ink));
     --fg: color-mix(in oklab, var(--ink) 96%, var(--paper));
-    --fg-2: color-mix(in oklab, var(--ink) 60%, var(--paper));
-    --fg-3: color-mix(in oklab, var(--ink) 42%, var(--paper));
-    --dot-off: color-mix(in oklab, var(--paper) 85%, var(--ink));
+    --fg-2: color-mix(in oklab, var(--ink) 67%, var(--paper));
+    --fg-3: color-mix(in oklab, var(--ink) 54%, var(--paper));
+    --dot-off: color-mix(in oklab, var(--paper) 81%, var(--ink));
     --grid-dot: color-mix(in srgb, var(--ink) 8%, transparent);
     --overlay: color-mix(in srgb, var(--paper) 72%, transparent);
     color-scheme: dark;
@@ -227,8 +227,13 @@ h1, h2, h3, p { margin: 0; }
 
 /* Big dot-matrix value */
 .big {
+  /* Design size, but never wider than the card: Doto is monospaced, so
+     size = (available width - unit) / (characters x 0.62). JS sets --chars/--unit-w. */
+  --chars: 4;
+  --unit-w: 0px;
+  --avail: 100cqw;
   margin-top: 12px;
-  font: 900 clamp(30px, 25cqmin, 76px)/.9 var(--f-dot);
+  font: 900 min(clamp(30px, 25cqmin, 76px), calc((var(--avail) - var(--unit-w)) / (var(--chars) * 0.62)))/.9 var(--f-dot);
   letter-spacing: .01em;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -239,7 +244,7 @@ h1, h2, h3, p { margin: 0; }
 .chart { margin-top: auto; padding-top: 10px; display: flex; align-items: flex-end; min-height: 0; }
 .chart svg { display: block; width: 100%; height: auto; max-height: 100%; }
 
-.err { margin-top: 12px; font: 400 12px/1.5 var(--f-mono); color: var(--accent); overflow-wrap: anywhere; overflow: auto; }
+.err { margin-top: 12px; font: 400 12px/1.5 var(--f-mono); color: var(--accent); overflow-wrap: anywhere; }
 
 /* Split layout inside wide modules; stacks when the module is narrow */
 .split { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; }
@@ -251,8 +256,8 @@ h1, h2, h3, p { margin: 0; }
 }
 
 /* Bitcoin */
-.btc .big { font-size: clamp(30px, 9.4cqw, 64px); }
-@container (max-width: 360px) { .btc .big { font-size: clamp(30px, 15cqw, 64px); } }
+.btc .big { --avail: calc(50cqw - 11px); }   /* left half of the split */
+@container (max-width: 360px) { .btc .big { --avail: 100cqw; } }
 .meter { margin-top: 12px; }
 .meter svg { display: block; width: 100%; height: auto; }
 .meter-cap { display: flex; justify-content: space-between; margin-top: 6px; }
@@ -271,15 +276,21 @@ h1, h2, h3, p { margin: 0; }
 .flag[data-s="warn"], .flag[data-s="crit"] { color: var(--accent); }
 
 /* Storage */
-.disks { margin-top: 12px; display: flex; flex-direction: column; gap: 16px; overflow: auto; flex: 1; min-height: 0; }
+.disks { margin-top: 12px; display: flex; flex-direction: column; gap: 16px; overflow: hidden; flex: 1; min-height: 0; }
 .disk-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
 .disk-name { font: 500 14px/1.2 var(--f-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .disk-name small { font: 400 11px var(--f-mono); color: var(--fg-2); margin-left: 6px; }
 .disk-pct { font: 900 26px/1 var(--f-dot); }
 .disk[data-s="warn"] .disk-pct, .disk[data-s="crit"] .disk-pct { color: var(--accent); }
 
-/* Logs / panels: scrollable content */
-.scroll { flex: 1; min-height: 0; overflow: auto; margin-top: 12px; overscroll-behavior: contain; }
+/* Logs / panels / storage content.
+   Card content never scrolls (it would trap the page's wheel/swipe scrolling).
+   Overflow is clipped with a fade; the full content opens in the sheet. */
+.clip { flex: 1; min-height: 0; overflow: hidden; margin-top: 12px; }
+.clip.more { mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent); -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent); }
+.mod[data-open] { cursor: pointer; }
+.mod[data-open]:hover, .mod[data-open]:focus-visible { border-color: var(--fg-3); }
+.sheet-out { padding-top: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .rows { display: flex; flex-direction: column; }
 .row-btn {
   display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: baseline;
@@ -397,10 +408,10 @@ dialog::backdrop { background: var(--overlay); backdrop-filter: blur(3px); }
   100% { outline: 2px solid transparent; outline-offset: 8px; }
 }
 
-/* Thin, quiet scrollbars inside modules and sheets */
-.scroll, .disks, .sheet-body, .err { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
-.scroll::-webkit-scrollbar, .disks::-webkit-scrollbar, .sheet-body::-webkit-scrollbar { width: 6px; height: 6px; }
-.scroll::-webkit-scrollbar-thumb, .disks::-webkit-scrollbar-thumb, .sheet-body::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+/* Thin, quiet scrollbar in the sheet (the only inner scroller) */
+.sheet-body { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.sheet-body::-webkit-scrollbar { width: 6px; height: 6px; }
+.sheet-body::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
 
 /* Doto: fully round dots, like a dot-matrix LED display */
 .title, .clock, .big, .ring-txt b, .disk-pct, .row-count, .section-head h2, .sheet-head h2 {
@@ -430,8 +441,15 @@ dialog::backdrop { background: var(--overlay); backdrop-filter: blur(3px); }
 .spec.mini { margin-top: auto; }
 .spec.mini dt, .spec.mini dd { padding: 4px 0; font-size: 10px; }
 .spec.mini dd { font-size: 11px; color: var(--fg-2); }
-.scroll.flush { margin-top: 0; }
+.clip.flush { margin-top: 0; }
 .meter.push { margin-top: auto; }
 .meter.tight { margin-top: 8px; }
 .spec.gap-top { margin-top: 12px; }
 .label.hot { color: var(--accent); }
+
+/* Very narrow phones (≤ 400px): the palette swatch alone identifies the palette,
+   and the header controls may wrap rather than overflow. */
+@media (max-width: 400px) {
+  #palette-name { display: none; }
+  .top-right { flex-wrap: wrap; }
+}

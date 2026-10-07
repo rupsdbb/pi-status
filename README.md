@@ -74,8 +74,12 @@ interval = 60
 
 Inspired by Nothing's design language: two colours plus one accent, which marks only the
 thing in trouble. Dot-matrix type (Doto) is used for numbers, and every graphic (history
-charts, meters, the battery ring) is drawn in dots. Cards sit on a bento grid of square units: 2 columns on phones, 4 on
-tablets and 6 on desktops.
+charts, meters, the battery ring) is drawn in dots. Cards sit on a bento grid of square units:
+2 columns on phones, 4 on tablets and 6 on desktops.
+
+Cards never scroll on their own, so the page always scrolls under your cursor or finger.
+Content that doesn't fit fades out at the bottom. Tap a custom panel, a log row or a service
+to open it in full.
 
 **Palettes.** A palette is a colour pair plus an alert accent. Dark mode uses the dark colour
 as background and the light one as text; light mode swaps them. Every other shade

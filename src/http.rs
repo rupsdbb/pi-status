@@ -56,6 +56,8 @@ fn handle(shared: &Shared, req: Request) {
     // Works both at the root and behind a reverse proxy that keeps a path prefix.
     let resp = if let Some(i) = url.find("/api/") {
         let api = &url[i + 5..];
+        // HEAD is GET without a body (tiny_http drops the body for HEAD)
+        let method = if method == Method::Head { Method::Get } else { method };
         match (&method, api) {
             (Method::Get, "status") => json(200, shared.snapshot().to_string()),
             (Method::Get, p) if p.starts_with("logs/") => match shared.log(&p[5..]) {
@@ -66,6 +68,10 @@ fn handle(shared: &Shared, req: Request) {
                 shared.refresh_versions.store(true, Ordering::SeqCst);
                 json(202, r#"{"ok":true}"#.into())
             }
+            // a known endpoint with the wrong method is 405, not 404
+            (_, "status") => json(405, r#"{"error":"method not allowed"}"#.into()).with_header(header("Allow", "GET")),
+            (_, p) if p.starts_with("logs/") => json(405, r#"{"error":"method not allowed"}"#.into()).with_header(header("Allow", "GET")),
+            (_, "versions/refresh") => json(405, r#"{"error":"method not allowed"}"#.into()).with_header(header("Allow", "POST")),
             _ => json(404, r#"{"error":"not found"}"#.into()),
         }
     } else if method == Method::Get || method == Method::Head {
