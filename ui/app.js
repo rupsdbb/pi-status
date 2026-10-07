@@ -594,7 +594,8 @@ function renderSheet(d = S.data) {
       row("Memory", fin(s.memory) ? bytes(s.memory) : null) +
       row("Restarts", fin(s.restarts) ? String(s.restarts) : null) +
       row("PID", fin(s.pid) ? String(s.pid) : null) +
-      row("Version", s.version ? esc(s.version) : null) +
+      (s.version ? row("Version", esc(s.version))
+        : s.version_error ? row("Version", `<span class="hot-text">unavailable · ${esc(s.version_error)}</span>`, "wrap") : "") +
       row("Group", esc(s.group)) +
       row("Description", esc(s.description), "wrap") +
       (s.link ? row("Link", `<a href="${esc(s.link)}" target="_blank" rel="noopener">${esc(s.link)}</a>`, "wrap") : "") +

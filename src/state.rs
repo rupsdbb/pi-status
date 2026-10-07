@@ -100,7 +100,7 @@ pub struct Slow {
 }
 
 struct VersionEntry {
-    value: Option<String>,
+    value: Result<String, String>,
     key: Option<config::VersionCfg>,
     at: Instant,
 }
@@ -267,7 +267,10 @@ impl Shared {
                 Some(e) => force || e.key != s.version || e.at.elapsed() >= ttl,
             };
             if stale {
-                let value = s.version.as_ref().and_then(services::version);
+                let value = match &s.version {
+                    Some(v) => services::version(v),
+                    None => Err(String::new()), // no [version] section: nothing to show
+                };
                 let entry = VersionEntry { value, key: s.version.clone(), at: Instant::now() };
                 lock(&self.versions).insert(s.id.clone(), entry);
             }
@@ -293,7 +296,9 @@ impl Shared {
                 .iter()
                 .map(|s| {
                     let mut v = serde_json::to_value(s).unwrap_or_default();
-                    v["version"] = versions.get(&s.id).and_then(|e| e.value.clone()).into();
+                    let e = versions.get(&s.id).map(|e| &e.value);
+                    v["version"] = e.and_then(|r| r.as_ref().ok().cloned()).into();
+                    v["version_error"] = e.and_then(|r| r.as_ref().err().filter(|m| !m.is_empty()).cloned()).into();
                     v
                 })
                 .collect()

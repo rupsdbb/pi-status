@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+use std::ffi::CString;
 use std::io::Read;
+use std::os::unix::ffi::OsStrExt;
+use std::os::unix::fs::DirBuilderExt;
 use std::os::unix::process::CommandExt;
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
+use std::sync::OnceLock;
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -31,7 +36,34 @@ impl Output {
 
 /// Run a command with a timeout. The child gets its own process group so a
 /// timeout kills everything it spawned (e.g. a whole `sh -c` pipeline).
+/// A writable `HOME` for child commands, when the service user has none.
+///
+/// The packaged service runs as a system user without a home directory, but
+/// many tools create dot-directories on start-up even for `--version`
+/// (bitcoind creates `~/.bitcoin/wallets`; Qt apps such as qbittorrent-nox create
+/// `~/.config`) and fail without one. If `$HOME` is missing or not writable,
+/// commands get a private directory under the temp dir instead (under systemd's
+/// `PrivateTmp=yes` that is a throwaway per-service `/tmp`).
+fn child_home() -> Option<&'static PathBuf> {
+    static HOME: OnceLock<Option<PathBuf>> = OnceLock::new();
+    HOME.get_or_init(|| {
+        let writable = |p: &std::ffi::OsStr| {
+            CString::new(p.as_bytes()).is_ok_and(|c| unsafe { libc::access(c.as_ptr(), libc::W_OK) } == 0)
+        };
+        if std::env::var_os("HOME").is_some_and(|h| writable(&h)) {
+            return None; // a real, usable home: leave it alone
+        }
+        let dir = std::env::temp_dir().join("pi-status-home");
+        std::fs::DirBuilder::new().recursive(true).mode(0o700).create(&dir).ok()?;
+        Some(dir)
+    })
+    .as_ref()
+}
+
 pub fn run(mut cmd: Command, timeout: Duration) -> Result<Output, String> {
+    if let Some(home) = child_home() {
+        cmd.env("HOME", home);
+    }
     cmd.stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

@@ -99,16 +99,18 @@ pub fn collect(services: &[ServiceCfg], uptime: f64) -> Vec<ServiceStatus> {
         .collect()
 }
 
-pub fn version(v: &VersionCfg) -> Option<String> {
+/// The service's version, or why it couldn't be determined (shown in the UI).
+pub fn version(v: &VersionCfg) -> Result<String, String> {
     if let Some(f) = &v.fixed {
-        return Some(f.clone());
+        return Ok(f.clone());
     }
-    let o = util::sh(v.cmd.as_deref()?, Duration::from_secs(15)).ok()?;
-    let text = format!("{}\n{}", o.stdout, o.stderr);
-    if v.raw {
+    let cmd = v.cmd.as_deref().ok_or("no `cmd` or `fixed` in [version]")?;
+    let o = util::sh(cmd, Duration::from_secs(15))?;
+    let found = if v.raw {
         // raw output of a failed command would be an error message, not a version
-        o.success.then(|| o.stdout.lines().map(str::trim).find(|l| !l.is_empty()).map(String::from))?
+        o.success.then(|| o.stdout.lines().map(str::trim).find(|l| !l.is_empty()).map(String::from)).flatten()
     } else {
-        util::extract_version(&text)
-    }
+        util::extract_version(&format!("{}\n{}", o.stdout, o.stderr))
+    };
+    found.ok_or_else(|| if o.success { "no version number in the output".into() } else { o.failure() })
 }

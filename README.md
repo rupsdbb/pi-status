@@ -192,6 +192,10 @@ instead, as the shipped configs do.
   (for example `-b` for the current boot).
 * **Commands:** every command (versions, panels, `vcgencmd`, `systemctl`, `journalctl`) has a
   timeout and runs in its own process group, which is killed on timeout. Output is capped at 4 MiB.
+* **No home directory needed:** the service user has none, but some tools create dot-folders
+  even for `--version` (bitcoind, Qt apps like qbittorrent-nox). When `$HOME` isn't writable,
+  commands get a private scratch home under `/tmp`. If a version still can't be read, the
+  service's sheet shows the reason.
 * **Resilience:** a panic in one collector is logged and that collector keeps running. The
   rest of the dashboard is unaffected.
 * **Storage:** `statvfs` on an unresponsive network mount can block. List local mounts only.

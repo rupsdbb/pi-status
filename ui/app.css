@@ -453,3 +453,4 @@ dialog::backdrop { background: var(--overlay); backdrop-filter: blur(3px); }
   #palette-name { display: none; }
   .top-right { flex-wrap: wrap; }
 }
+.hot-text { color: var(--accent); }
